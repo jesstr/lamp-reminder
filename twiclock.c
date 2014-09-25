@@ -6,11 +6,13 @@
 
 void TWI_Init()
 {
-	TWBR = 0x0C ;										// bit rate
+	ee_year = 2000; /* Set base year */
+
+	TWBR = 0x0C;										// bit rate
 	TWDR = 0xFF;										// release bus
 	TWCR = (1<<TWEN)|									// TWI on
-			(0<<TWIE)|(0<<TWINT)|						
-			(0<<TWEA)|(0<<TWSTA)|(0<<TWSTO)|			
+			(0<<TWIE)|(0<<TWINT)|
+			(0<<TWEA)|(0<<TWSTA)|(0<<TWSTO)|
 			(0<<TWWC); 
 }
 
@@ -96,6 +98,8 @@ unsigned char TWI_SetByte(unsigned char Adr, unsigned char data)
 	{TWCR = (1<<TWINT)|(1<<TWEN)|(1<<TWSTO); return 0xff; }
 
 	TWCR = (1<<TWINT)|(1<<TWEN)|(1<<TWSTO); //STOP
+
+	return 0;
 }
 
 // ����� �������� �������
@@ -103,31 +107,30 @@ unsigned char TWI_SetByte(unsigned char Adr, unsigned char data)
 void TWI_GetTime()
 {
 	unsigned char tmp;
-	tmp=TWI_GetByte(ADR_SEC);
-	time.sec=(tmp/16)*10+tmp%16; //bcd2hex
-	tmp=TWI_GetByte(ADR_MIN);
-	time.min=(tmp/16)*10+tmp%16;
-	tmp=TWI_GetByte(ADR_HOUR);
-	time.hour=(tmp/16)*10+tmp%16;
-	tmp=TWI_GetByte(ADR_DATE);
-	time.date=(tmp/16)*10+tmp%16;
-	tmp=TWI_GetByte(ADR_MON);
-	time.mon=(tmp/16)*10+tmp%16;
-	tmp=TWI_GetByte(ADR_YEAR);
-	time.year=(tmp/16)*10+tmp%16;
+	tmp = TWI_GetByte(ADR_SEC);
+	time.sec = (tmp / 16) * 10 + tmp % 16; //bcd2hex
+	tmp = TWI_GetByte(ADR_MIN);
+	time.min = (tmp / 16) * 10 + tmp % 16;
+	tmp = TWI_GetByte(ADR_HOUR);
+	time.hour = (tmp / 16) * 10 + tmp % 16;
+	tmp = TWI_GetByte(ADR_DATE);
+	time.date = (tmp / 16) * 10 + tmp % 16;
+	tmp = TWI_GetByte(ADR_MON);
+	time.mon = (tmp / 16) * 10 + tmp % 16;
+	tmp = TWI_GetByte(ADR_YEAR);
+	time.year = (tmp / 16) * 10 + tmp % 16;
 }
 
 // ��������� �������� �������
 // Set current time
 void TWI_SetTime()
 {
-	unsigned char tmp;
 	//eeprom_write_word(&ee_year,year);
-	time.year=0;
+	time.year = ee_year;
 	TWI_SetByte(ADR_YEAR, 0);	// offset // ��������
-	TWI_SetByte(ADR_MON, (time.mon/10)*16+time.mon%10);
-	TWI_SetByte(ADR_DATE, (time.date/10)*16+time.date%10);
-	TWI_SetByte(ADR_HOUR, (time.hour/10)*16+time.hour%10);
-	TWI_SetByte(ADR_MIN, (time.min/10)*16+time.min%10);
+	TWI_SetByte(ADR_MON, (time.mon / 10) * 16 + time.mon % 10);
+	TWI_SetByte(ADR_DATE, (time.date / 10) * 16 + time.date % 10);
+	TWI_SetByte(ADR_HOUR, (time.hour / 10) * 16 + time.hour % 10);
+	TWI_SetByte(ADR_MIN, (time.min / 10) * 16 + time.min % 10);
 	
 }

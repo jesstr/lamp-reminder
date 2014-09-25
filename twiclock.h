@@ -1,3 +1,12 @@
+/*
+ * twiclock.h
+ *
+ *  Created on: 16.09.2012
+ *      Author: Pavel Cherstvov
+ */
+
+#ifndef TWICLOCK_H_
+#define TWICLOCK_H_
 
 #define SLA_W	0b11010000	// Clock address + write flag	
 #define SLA_R	0b11010001	// Clock address + read flag
@@ -32,7 +41,7 @@
 
 
 //uint16_t ee_year EEMEM = 2000; // Base year in EEPROM
-uint16_t ee_year = 2000; // Base year
+uint16_t ee_year; // Base year = 2000 (twiclock.c)
 uint16_t year;   // Year value, global variable
 
 // 4 �������� ������� ���� ��� �������� �������
@@ -55,5 +64,7 @@ void TWI_SetTime(void);
 void TWI_GetTime(void);
 // Receive byte from slave
 unsigned char TWI_GetByte(unsigned char Adr);
+
+#endif /* TWICLOCK_H_ */
 
 
