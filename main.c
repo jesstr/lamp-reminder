@@ -11,6 +11,7 @@
 #include <util/delay.h>
 #include <avr/interrupt.h>
 #include <avr/eeprom.h>
+#include <stdlib.h>
 #include "rgb.h"
 #include "uart.h"
 #include "int.h"
@@ -114,26 +115,39 @@ int main(void)
 	INT_Init();
 	sei();
 
-	/* Set time  */
-	time.year = 1;
-	time.mon = 1;
-	time.date = 1;
-	time.hour = 1;
-	time.min = 1;
-	time.sec = 1;
+	{ /* Time debug part */
 
-	TWI_SetTime();
+		/* Debug set time  */
+		time.year = 1;
+		time.mon = 1;
+		time.date = 1;
+		time.hour = 1;
+		time.min = 1;
+		time.sec = 1;
 
-	/* Get time */
-	unsigned char tmp;
+		TWI_SetTime();
 
- 	tmp=TWI_GetByte(ADR_SEC);
-	time.sec=(tmp/16)*10+tmp%16;
-	tmp=TWI_GetByte(ADR_MIN);
-	time.min=(tmp/16)*10+tmp%16;
-	tmp=TWI_GetByte(ADR_HOUR);
-	time.hour=(tmp/16)*10+tmp%16;
+		/* Debug get time */
+		unsigned char tmp;
 
+		tmp=TWI_GetByte(ADR_SEC);
+		time.sec=(tmp/16)*10+tmp%16;
+		tmp=TWI_GetByte(ADR_MIN);
+		time.min=(tmp/16)*10+tmp%16;
+		tmp=TWI_GetByte(ADR_HOUR);
+		time.hour=(tmp/16)*10+tmp%16;
+
+		/* Debug send time */
+		char buf[10];
+
+		UART_SendString(itoa(time.year, buf, 10));
+		UART_SendString(itoa(time.mon, buf, 10));
+		UART_SendString(itoa(time.date, buf, 10));
+		UART_SendString(itoa(time.hour, buf, 10));
+		UART_SendString(itoa(time.min, buf, 10));
+		UART_SendString(itoa(time.sec, buf, 10));
+
+	}
 
 	while (1) {
 		if (new_command) {
