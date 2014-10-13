@@ -9,6 +9,7 @@ void TWI_Init()
 	ee_year = 2000; /* Set base year */
 
 	TWBR = 0x0C;										// bit rate
+	TWSR |= (1<<TWPS1)|(1<<TWPS0);						//64 divider
 	TWDR = 0xFF;										// release bus
 	TWCR = (1<<TWEN)|									// TWI on
 			(0<<TWIE)|(0<<TWINT)|
