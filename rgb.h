@@ -12,17 +12,17 @@
 #include "rgb.h"
 
 
-#define RED_DDR 	DDRB
-#define	BLUE_DDR 	DDRB
-#define	GREEN_DDR 	DDRB
+#define RED_DDR 	DDRC
+#define	BLUE_DDR 	DDRC
+#define	GREEN_DDR 	DDRC
 
-#define	RED_PORT	PORTB
-#define	BLUE_PORT	PORTB
-#define	GREEN_PORT	PORTB
+#define	RED_PORT	PORTC
+#define	BLUE_PORT	PORTC
+#define	GREEN_PORT	PORTC
 
-#define	RED_PIN		1
-#define	BLUE_PIN	2
-#define	GREEN_PIN	3
+#define	RED_PIN		0
+#define	BLUE_PIN	1
+#define	GREEN_PIN	2
 
 /* Soft timers for soft PWM */
 soft_timer_t red_timer;

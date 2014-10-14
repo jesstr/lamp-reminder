@@ -23,6 +23,8 @@
 volatile unsigned char new_command;
 /* UART RX buffer */
 volatile unsigned char uart_rx_buf;
+/* Color cursor */
+unsigned char color_to_set;
 
 
 /* USART RX interrupt routine */
@@ -46,7 +48,8 @@ ISR(INT1_vect) {
 void SoftPwm_Timer_Init(void)
 {
 	/* 1024 divider, (~30Гц) on 8MHz */
-	TCCR0 |= (1<<CS02)|(1<<CS00);
+	//TCCR0 |= (1<<CS02)|(1<<CS00);
+	TCCR0 |= (1<<CS00); //no div
 	TIMSK |= (1<<TOIE0);
 	TCNT0 = 0;
 }
@@ -59,11 +62,13 @@ ISR(TIMER0_OVF_vect)
 		if (red_timer.counter < 255) {
 			if (red_timer.counter == red_timer.load) {
 				/* Set red LED pin */
+				RED_PORT &= ~(1 << RED_PIN);
 			}
 			red_timer.counter++;
 		}
 		else {
 			RED_TIMER_RESET;
+			RED_PORT |= (1 << RED_PIN);
 		}
 	}
 	/* blue_timer check */
@@ -71,11 +76,13 @@ ISR(TIMER0_OVF_vect)
 		if (blue_timer.counter < 255) {
 			if (blue_timer.counter == blue_timer.load) {
 				/* Set blue LED pin */
+				BLUE_PORT &= ~(1 << BLUE_PIN);
 			}
 			blue_timer.counter++;
 		}
 		else {
 			BLUE_TIMER_RESET;
+			BLUE_PORT |= (1 << BLUE_PIN);
 		}
 	}
 	/* green_timer check */
@@ -83,11 +90,13 @@ ISR(TIMER0_OVF_vect)
 		if (green_timer.counter < 255) {
 			if (green_timer.counter == green_timer.load) {
 				/* Set green LED pin */
+				GREEN_PORT &= ~(1 << GREEN_PIN);
 			}
 			green_timer.counter++;
 		}
 		else {
 			GREEN_TIMER_RESET;
+			GREEN_PORT |= (1 << GREEN_PIN);
 		}
 	}
 }
@@ -102,18 +111,41 @@ inline void IO_Init(void) {
 int main(void)
 {
 	RGB_IO_Init();
+	SoftPwm_Timer_Init();
 
 	red_timer.load = 100;
 	blue_timer.load = 100;
-	green_timer.load = 100;
+	//green_timer.load = 100;
 
 	RGB_TIMERS_START;
+
+	//RED_PORT |= (1 << RED_PIN);
+	//BLUE_PORT |= (1 << BLUE_PIN);
+	//GREEN_PORT |= (1 << GREEN_PIN); //defected pin
 
 	TWI_Init();
 	year = eeprom_read_word(&year);
 	UART_Init(MYUBRR);
 	INT_Init();
 	sei();
+
+	UART_SendString("Start\n");
+
+
+	UART_SendByte(TWI_GetByte(ADR_SEC)); //test
+	//_delay_ms(500);
+	UART_SendByte(TWI_GetByte(ADR_MIN)); //test
+	//_delay_ms(500);
+	UART_SendByte(TWI_GetByte(ADR_HOUR)); //test
+	//_delay_ms(500);
+	UART_SendByte(TWI_GetByte(ADR_DAY)); //test
+	//_delay_ms(500);
+	UART_SendByte(TWI_GetByte(ADR_DATE)); //test
+	//_delay_ms(500);
+	UART_SendByte(TWI_GetByte(ADR_MON)); //test
+	//_delay_ms(500);
+	UART_SendByte(TWI_GetByte(ADR_YEAR)); //test
+
 
 	{ /* Time debug part */
 
@@ -125,6 +157,7 @@ int main(void)
 		time.min = 1;
 		time.sec = 1;
 
+#if 0
 		TWI_SetTime();
 
 		/* Debug get time */
@@ -147,6 +180,9 @@ int main(void)
 		UART_SendString(itoa(time.min, buf, 10));
 		UART_SendString(itoa(time.sec, buf, 10));
 
+		UART_SendString("\n");
+#endif
+
 	}
 
 	while (1) {
@@ -163,13 +199,37 @@ int main(void)
 					new_command = 0;
 					break;
 				/* Set LED color */
-				case 0x80 ... 0x9F:
-
+				//case 0x80 ... 0x9F:
+				case 'C':
+					color_to_set = 1;
 					new_command = 0;
 					break;
 				default:
+					switch (color_to_set) {
+						case 1:
+							red_timer.load = uart_rx_buf;
+							color_to_set++;
+							new_command = 0;
+							break;
+						case 2:
+							green_timer.load = uart_rx_buf;
+							color_to_set++;
+							new_command = 0;
+							break;
+						case 3:
+							blue_timer.load = uart_rx_buf;
+							color_to_set = 0;
+							new_command = 0;
+							break;
+						default:
+							break;
+					}
 					break;
 			}
 		}
+
+		//UART_SendByte(TWI_GetByte(ADR_SEC)); //test
+		//_delay_ms(500);
+
 	}
 }
