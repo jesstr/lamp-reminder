@@ -65,6 +65,7 @@ unsigned char TWI_GetByte(unsigned char Adr)
 	{TWCR = (1<<TWINT)|(1<<TWEN)|(1<<TWSTO); return 0xff; }
 
 	TWCR = (1<<TWINT)|(1<<TWEN)|(1<<TWSTO); //STOP
+
 	return data;
 }
 
