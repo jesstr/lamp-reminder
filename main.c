@@ -132,58 +132,91 @@ int main(void)
 	UART_SendString("Start\n");
 
 
+	/* Time debug part */
+
+	/*
 	UART_SendByte(TWI_GetByte(ADR_SEC)); //test
-	//_delay_ms(500);
+	_delay_us(50);
 	UART_SendByte(TWI_GetByte(ADR_MIN)); //test
-	//_delay_ms(500);
+	_delay_us(50);
 	UART_SendByte(TWI_GetByte(ADR_HOUR)); //test
-	//_delay_ms(500);
+	_delay_us(50);
 	UART_SendByte(TWI_GetByte(ADR_DAY)); //test
-	//_delay_ms(500);
+	_delay_us(50);
 	UART_SendByte(TWI_GetByte(ADR_DATE)); //test
-	//_delay_ms(500);
+	_delay_us(50);
 	UART_SendByte(TWI_GetByte(ADR_MON)); //test
-	//_delay_ms(500);
+	_delay_us(50);
 	UART_SendByte(TWI_GetByte(ADR_YEAR)); //test
+	*/
+
+	/*
+	tmp=TWI_GetByte(ADR_YEAR);
+	time.year=(tmp/16)*10+tmp%16;
+	_delay_us(100);
+	tmp=TWI_GetByte(ADR_MON);
+	time.mon=(tmp/16)*10+tmp%16;
+	_delay_us(100);
+	tmp=TWI_GetByte(ADR_DATE);
+	time.date=(tmp/16)*10+tmp%16;
+	_delay_us(100);
+	tmp=TWI_GetByte(ADR_SEC);
+	time.sec=(tmp/16)*10+tmp%16;
+	_delay_us(100);
+	tmp=TWI_GetByte(ADR_MIN);
+	time.min=(tmp/16)*10+tmp%16;
+	_delay_us(100);
+	tmp=TWI_GetByte(ADR_HOUR);
+	time.hour=(tmp/16)*10+tmp%16;
+	_delay_us(100);
+	UART_SendString("\n");
+	 */
+
+	/*
+	_delay_ms(2000);
+
+	UART_SendByte(TWI_GetByte(ADR_SEC)); //test
+	_delay_us(50);
+	UART_SendByte(TWI_GetByte(ADR_MIN)); //test
+	_delay_us(50);
+	UART_SendByte(TWI_GetByte(ADR_HOUR)); //test
+	_delay_us(50);
+	UART_SendByte(TWI_GetByte(ADR_DAY)); //test
+	_delay_us(50);
+	UART_SendByte(TWI_GetByte(ADR_DATE)); //test
+	_delay_us(50);
+	UART_SendByte(TWI_GetByte(ADR_MON)); //test
+	_delay_us(50);
+	UART_SendByte(TWI_GetByte(ADR_YEAR)); //test
+	UART_SendString("\n");
+	 */
+
+	/* Time debug */
+
+	time.year = 14;
+	time.mon = 10;
+	time.date = 21;
+	time.hour = 17;
+	time.min = 00;
+	time.sec = 00;
+
+	TWI_SetTime();
+
+	_delay_ms(2000);
+
+	char buf[32];
+
+	TWI_GetTime();
+	UART_SendString(TWI_PrintDateTime(buf));
+
+	_delay_ms(2000);
+
+	TWI_GetTime();
+	UART_SendString(TWI_PrintDateTime(buf));
 
 
-	{ /* Time debug part */
+	/* End of time debug */
 
-		/* Debug set time  */
-		time.year = 1;
-		time.mon = 1;
-		time.date = 1;
-		time.hour = 1;
-		time.min = 1;
-		time.sec = 1;
-
-#if 0
-		TWI_SetTime();
-
-		/* Debug get time */
-		unsigned char tmp;
-
-		tmp=TWI_GetByte(ADR_SEC);
-		time.sec=(tmp/16)*10+tmp%16;
-		tmp=TWI_GetByte(ADR_MIN);
-		time.min=(tmp/16)*10+tmp%16;
-		tmp=TWI_GetByte(ADR_HOUR);
-		time.hour=(tmp/16)*10+tmp%16;
-
-		/* Debug send time */
-		char buf[10];
-
-		UART_SendString(itoa(time.year, buf, 10));
-		UART_SendString(itoa(time.mon, buf, 10));
-		UART_SendString(itoa(time.date, buf, 10));
-		UART_SendString(itoa(time.hour, buf, 10));
-		UART_SendString(itoa(time.min, buf, 10));
-		UART_SendString(itoa(time.sec, buf, 10));
-
-		UART_SendString("\n");
-#endif
-
-	}
 
 	while (1) {
 		if (new_command) {
@@ -229,7 +262,7 @@ int main(void)
 		}
 
 		//UART_SendByte(TWI_GetByte(ADR_SEC)); //test
-		//_delay_ms(500);
+		//_delay_ms(1000);
 
 	}
 }
