@@ -3,25 +3,23 @@
 
 #include <avr/eeprom.h>
 #include "twiclock.h"
-#include <util/delay.h> // for ugly bug fix
 #include <stdio.h>
 
 void TWI_Init()
 {
-	ee_year = 2000; /* Set base year */
-
-	TWBR = 0x20;										// bit rate
-	//TWSR |= (1<<TWPS1)|(1<<TWPS0);					//64 divider
-	TWSR |= (1<<TWPS1);									//16 divider
-	TWDR = 0xFF;										// release bus
-	TWCR = (1<<TWEN)|									// TWI on
+	/* Set base year */
+	ee_year = 2000;
+	/* Set bit rate (100kHz on 8Mhz) */
+	TWBR = 0x00;
+	TWSR |= (1<<TWPS1);					// divider 16
+	TWDR = 0xFF;						// release bus
+	TWCR = (1<<TWEN)|					// TWI on
 			(0<<TWIE)|(0<<TWINT)|
 			(0<<TWEA)|(0<<TWSTA)|(0<<TWSTO)|
 			(0<<TWWC); 
 }
 
-// ����� ����� �� �������� ����������
-// Receive byte from slave
+/* Receive byte from slave */
 unsigned char TWI_GetByte(unsigned char Adr)
 {
 	unsigned char data;
@@ -39,7 +37,7 @@ unsigned char TWI_GetByte(unsigned char Adr)
 	if ((TWSR & 0xF8) != TWI_MTX_ADR_ACK) //Status: SLA+W_ACK
 	{TWCR = (1<<TWINT)|(1<<TWEN)|(1<<TWSTO); return 0xff; }
 
-	TWDR = Adr;	//data (address in slave memory) //data (����� � ������ ������������) 
+	TWDR = Adr;	//data (address in slave memory)
 	TWCR = (1<<TWINT) | (1<<TWEN);
 	while (!(TWCR & (1<<TWINT)))
 	;
@@ -52,7 +50,7 @@ unsigned char TWI_GetByte(unsigned char Adr)
 	if ((TWSR & 0xF8) != TWI_REP_START) //Status: REPEATED START
 	{TWCR = (1<<TWINT)|(1<<TWEN)|(1<<TWSTO); return 0xff; }
 	
-	TWDR = SLA_R; //Slave address + read flag //����� ������������ + ���� ������
+	TWDR = SLA_R; //Slave address + read flag
 	TWCR = (1<<TWINT) | (1<<TWEN);
 	while (!(TWCR & (1<<TWINT)))
 	;
@@ -71,24 +69,23 @@ unsigned char TWI_GetByte(unsigned char Adr)
 	return data;
 }
 
-// �������� ����� �������� ����������
-// Sent byte to Slave
+/* Sent byte to Slave */
 unsigned char TWI_SetByte(unsigned char Adr, unsigned char data)
 {
 	TWCR = (1<<TWINT)|(1<<TWSTA)|(1<<TWEN); //START
 	while (!(TWCR & (1<<TWINT)))
 	;
-	if ((TWSR & 0xF8) != TWI_START) //������: START
+	if ((TWSR & 0xF8) != TWI_START) //START
 	{TWCR = (1<<TWINT)|(1<<TWEN)|(1<<TWSTO); return 0xff; }
 
-	TWDR = SLA_W; //Slave address + write flag //����� �������� + ���� ������
+	TWDR = SLA_W; //Slave address + write flag
 	TWCR = (1<<TWINT) | (1<<TWEN);
 	while (!(TWCR & (1<<TWINT)))
 	;
 	if ((TWSR & 0xF8) != TWI_MTX_ADR_ACK) //Status: SLA+W_ACK
 	{TWCR = (1<<TWINT)|(1<<TWEN)|(1<<TWSTO); return 0xff; }
 
-	TWDR = Adr;	//data (address in slave memory) //data (����� � ������ ������������)
+	TWDR = Adr;	//data (address in slave memory)
 	TWCR = (1<<TWINT) | (1<<TWEN);
 	while (!(TWCR & (1<<TWINT)))
 	;
@@ -107,52 +104,38 @@ unsigned char TWI_SetByte(unsigned char Adr, unsigned char data)
 	return 0;
 }
 
-// ����� �������� �������
-// Get current time
+/* Get current time */
 void TWI_GetTime()
 {
 	unsigned char tmp;
 	tmp = TWI_GetByte(ADR_SEC);
 	time.sec = (tmp / 16) * 10 + tmp % 16; //bcd2hex
-	_delay_us(50);
 	tmp = TWI_GetByte(ADR_MIN);
 	time.min = (tmp / 16) * 10 + tmp % 16;
-	_delay_us(50);
 	tmp = TWI_GetByte(ADR_HOUR);
 	time.hour = (tmp / 16) * 10 + tmp % 16;
-	_delay_us(50);
 	tmp = TWI_GetByte(ADR_DATE);
 	time.date = (tmp / 16) * 10 + tmp % 16;
-	_delay_us(50);
 	tmp = TWI_GetByte(ADR_MON);
 	time.mon = (tmp / 16) * 10 + tmp % 16;
-	_delay_us(50);
 	tmp = TWI_GetByte(ADR_YEAR);
 	time.year = (tmp / 16) * 10 + tmp % 16;
-	_delay_us(50);
 }
 
-// ��������� �������� �������
-// Set current time
+/* Set current time */
 void TWI_SetTime()
 {
 	//eeprom_write_word(&ee_year,year);
 	time.year = ee_year;
-	TWI_SetByte(ADR_YEAR, 0);	// offset // ��������
-	_delay_us(50);
+	TWI_SetByte(ADR_YEAR, 0);	// offset
 	TWI_SetByte(ADR_MON, (time.mon / 10) * 16 + time.mon % 10);
-	_delay_us(50);
 	TWI_SetByte(ADR_DATE, (time.date / 10) * 16 + time.date % 10);
-	_delay_us(50);
 	TWI_SetByte(ADR_HOUR, (time.hour / 10) * 16 + time.hour % 10);
-	_delay_us(50);
 	TWI_SetByte(ADR_MIN, (time.min / 10) * 16 + time.min % 10);
-	_delay_us(50);
 	TWI_SetByte(ADR_SEC, (time.sec / 10) * 16 + time.min % 10);
-	_delay_us(50);
-	
 }
 
+/* Print current date and time */
 char *TWI_PrintDateTime(char *buf)
 {
 	sprintf(buf, "Time: %2d.%2d.%2d %2d:%2d:%2d\n",
