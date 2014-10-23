@@ -11,6 +11,7 @@
 #include <util/delay.h>
 #include <avr/interrupt.h>
 #include <avr/eeprom.h>
+#include <avr/pgmspace.h>
 #include <stdlib.h>
 #include "rgb.h"
 #include "uart.h"
@@ -25,6 +26,26 @@ volatile unsigned char new_command;
 volatile unsigned char uart_rx_buf;
 /* Color cursor */
 unsigned char color_to_set;
+
+/* Banner image */
+char banner[] PROGMEM = {
+"											\n\
+Wedding Anniversary Lamp					\n\
+               _							\n\
+        {@}  _|=|_							\n\
+       /(\")\\  (\") 						\n\
+      /((~))\\/<X>\\						\n\
+      ~~/@\\~~\\|_|/						\n\
+       /   \\  |||							\n\
+      /~@~@~\\ |||							\n\
+_____/_______\\|||_______					\n\
+						  					\n\
+  September 19th 2014						\n\
+											\n\
+    Andrew and Lina							\n\
+________________________					\n\
+											\n"
+};
 
 
 /* USART RX interrupt routine */
@@ -129,8 +150,8 @@ int main(void)
 	INT_Init();
 	sei();
 
-	UART_SendString("Start\n");
-
+	/* Print banner image */
+	UART_PgmSendString(banner);
 
 	/* Time debug */
 	time.year = 14;
@@ -140,18 +161,11 @@ int main(void)
 	time.min = 00;
 	time.sec = 00;
 
-	TWI_SetTime();
-
-	_delay_ms(2000);
+	TWI_SetTime(&time);
 
 	char buf[32];
 
-	TWI_GetTime();
-	UART_SendString(TWI_PrintDateTime(buf));
-
-	_delay_ms(2000);
-
-	TWI_GetTime();
+	TWI_GetTime(&time);
 	UART_SendString(TWI_PrintDateTime(buf));
 	/* Time debug end */
 

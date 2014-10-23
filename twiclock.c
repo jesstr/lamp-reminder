@@ -105,40 +105,39 @@ unsigned char TWI_SetByte(unsigned char Adr, unsigned char data)
 }
 
 /* Get current time */
-void TWI_GetTime()
+void TWI_GetTime(time_t *time)
 {
 	unsigned char tmp;
 	tmp = TWI_GetByte(ADR_SEC);
-	time.sec = (tmp / 16) * 10 + tmp % 16; //bcd2hex
+	time->sec = (tmp / 16) * 10 + tmp % 16; //bcd2hex
 	tmp = TWI_GetByte(ADR_MIN);
-	time.min = (tmp / 16) * 10 + tmp % 16;
+	time->min = (tmp / 16) * 10 + tmp % 16;
 	tmp = TWI_GetByte(ADR_HOUR);
-	time.hour = (tmp / 16) * 10 + tmp % 16;
+	time->hour = (tmp / 16) * 10 + tmp % 16;
 	tmp = TWI_GetByte(ADR_DATE);
-	time.date = (tmp / 16) * 10 + tmp % 16;
+	time->date = (tmp / 16) * 10 + tmp % 16;
 	tmp = TWI_GetByte(ADR_MON);
-	time.mon = (tmp / 16) * 10 + tmp % 16;
+	time->mon = (tmp / 16) * 10 + tmp % 16;
 	tmp = TWI_GetByte(ADR_YEAR);
-	time.year = (tmp / 16) * 10 + tmp % 16;
+	time->year = (tmp / 16) * 10 + tmp % 16;
 }
 
 /* Set current time */
-void TWI_SetTime()
+void TWI_SetTime(time_t *time)
 {
 	//eeprom_write_word(&ee_year,year);
-	time.year = ee_year;
-	TWI_SetByte(ADR_YEAR, 0);	// offset
-	TWI_SetByte(ADR_MON, (time.mon / 10) * 16 + time.mon % 10);
-	TWI_SetByte(ADR_DATE, (time.date / 10) * 16 + time.date % 10);
-	TWI_SetByte(ADR_HOUR, (time.hour / 10) * 16 + time.hour % 10);
-	TWI_SetByte(ADR_MIN, (time.min / 10) * 16 + time.min % 10);
-	TWI_SetByte(ADR_SEC, (time.sec / 10) * 16 + time.min % 10);
+	TWI_SetByte(ADR_YEAR, time->year - 2000);	// offset
+	TWI_SetByte(ADR_MON, (time->mon / 10) * 16 + time->mon % 10);
+	TWI_SetByte(ADR_DATE, (time->date / 10) * 16 + time->date % 10);
+	TWI_SetByte(ADR_HOUR, (time->hour / 10) * 16 + time->hour % 10);
+	TWI_SetByte(ADR_MIN, (time->min / 10) * 16 + time->min % 10);
+	TWI_SetByte(ADR_SEC, (time->sec / 10) * 16 + time->sec % 10);
 }
 
 /* Print current date and time */
 char *TWI_PrintDateTime(char *buf)
 {
-	sprintf(buf, "Time: %2d.%2d.%2d %2d:%2d:%2d\n",
+	sprintf(buf, "Current time: %02d.%02d.%02d %02d:%02d:%02d\n",
 			time.date, time.mon, time.year, time.hour, time.min, time.sec);
 
 	return buf;

@@ -41,7 +41,7 @@ uint16_t ee_year; // Base year = 2000 (twiclock.c)
 uint16_t year;   // Year value, global variable
 
 /* 4 bytes struct for time store */
-struct 	
+typedef struct
 {
 	unsigned char sec:6;
 	unsigned char min:6;
@@ -49,14 +49,16 @@ struct
 	unsigned char date:5;
 	unsigned char mon:4;
 	unsigned char year:6;
-} time;	
+} time_t;
+
+time_t time;
 
 /* Init clock */
 void TWI_Init(void);
 /* Set current time */
-void TWI_SetTime(void);
+void TWI_SetTime(time_t *time);
 /* Get current time */
-void TWI_GetTime(void);
+void TWI_GetTime(time_t *time);
 /* Receive byte from slave */
 unsigned char TWI_GetByte(unsigned char Adr);
 /* Print current date and time */
