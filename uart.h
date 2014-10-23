@@ -13,5 +13,7 @@ void UART_SendByte(unsigned char byte1);
 void UART_SendString(char *buffer);
 /* Send data over UART */
 void UART_SendData(char *buffer, unsigned short nbytes);
+/* Send text string from program memory over UART */
+void UART_PgmSendString(char *str);
 
 #endif /* _UART_H_ */

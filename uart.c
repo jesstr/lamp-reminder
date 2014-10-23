@@ -1,3 +1,4 @@
+#include <avr/pgmspace.h>
 #include "avr/io.h"
 #include "uart.h"
 
@@ -34,6 +35,17 @@ void UART_SendData(char *buffer, unsigned short nbytes)
 		UART_SendByte(*buffer++);
 		nbytes--;
 	}
+}
+
+/* Send text string from program memory over UART */
+void UART_PgmSendString(char *str){
+	int i = 0;
+	char buf;
+
+	while( (buf = pgm_read_byte(str++)) ) {
+			i++;
+			UART_SendByte(buf);
+		}
 }
 
 /* RX Interrupt routine (has to be moved to the main file) */
