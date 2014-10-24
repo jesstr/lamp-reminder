@@ -14,11 +14,11 @@ void RGB_IO_Init(void) {
 
 	RED_DDR |= (1 << RED_PIN);
 	BLUE_DDR |= (1 << BLUE_PIN);
-	//GREEN_DDR |= (1 << GREEN_PIN); //defected pin
+	GREEN_DDR |= (1 << GREEN_PIN); //defected pin
 
 	RED_PORT &= ~(1 << RED_PIN);
 	BLUE_PORT &= ~(1 << BLUE_PIN);
-	//GREEN_PORT &= ~(1 << GREEN_PIN); //defected pin
+	GREEN_PORT &= ~(1 << GREEN_PIN); //defected pin
 
 }
 

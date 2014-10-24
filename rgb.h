@@ -14,15 +14,15 @@
 
 #define RED_DDR 	DDRC
 #define	BLUE_DDR 	DDRC
-#define	GREEN_DDR 	DDRC
+#define	GREEN_DDR 	DDRD
 
 #define	RED_PORT	PORTC
 #define	BLUE_PORT	PORTC
-#define	GREEN_PORT	PORTC
+#define	GREEN_PORT	PORTD
 
 #define	RED_PIN		0
 #define	BLUE_PIN	1
-#define	GREEN_PIN	2
+#define	GREEN_PIN	5
 
 /* Soft timers for soft PWM */
 soft_timer_t red_timer;

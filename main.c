@@ -12,12 +12,14 @@
 #include <avr/interrupt.h>
 #include <avr/eeprom.h>
 #include <avr/pgmspace.h>
+#include <string.h>
 #include <stdlib.h>
 #include "rgb.h"
 #include "uart.h"
 #include "int.h"
 #include "soft_timer.h"
 #include "twiclock.h"
+#include "parce.h"
 
 
 /* Flag, new UART command received */
@@ -29,30 +31,29 @@ unsigned char color_to_set;
 
 /* Banner image */
 char banner[] PROGMEM = {
-"											\n\
-Wedding Anniversary Lamp					\n\
-               _							\n\
-        {@}  _|=|_							\n\
-       /(\")\\  (\") 						\n\
-      /((~))\\/<X>\\						\n\
-      ~~/@\\~~\\|_|/						\n\
-       /   \\  |||							\n\
-      /~@~@~\\ |||							\n\
-_____/_______\\|||_______					\n\
-						  					\n\
-  September 19th 2014						\n\
-											\n\
-    Andrew and Lina							\n\
-________________________					\n\
-											\n"
+"											\n\r\
+Wedding Anniversary Lamp					\n\r\
+               _							\n\r\
+        {@}  _|=|_							\n\r\
+       /(\")\\  (\") 						\n\r\
+      /((~))\\/<X>\\						\n\r\
+      ~~/@\\~~\\|_|/						\n\r\
+       /   \\  |||							\n\r\
+      /~@~@~\\ |||							\n\r\
+_____/_______\\|||_______					\n\r\
+						  					\n\r\
+  September 19th 2014						\n\r\
+											\n\r\
+    Andrew and Lina							\n\r\
+________________________					\n\r\
+											\n\r"
 };
 
 
 /* USART RX interrupt routine */
 ISR(USART_RXC_vect)
 {
-	uart_rx_buf = UDR;
-	new_command = 1;
+	UART_FillRxBuf(UDR);
 }
 
 /* TODO INT0 interrupt routine (INT0 external IRQ) */
@@ -169,6 +170,66 @@ int main(void)
 	UART_SendString(TWI_PrintDateTime(buf));
 	/* Time debug end */
 
+	  while(1) {
+			if (IS_NEW_COMMAND) {
+				command = strtok(uart_rx_packet, "=, ");
+				lex_p[n_lex++] = command;
+				while( (command = strtok(NULL, "=, ")) ) {
+					lex_p[n_lex++] = command;
+				}
+				/* Set current date and time: "date" */
+				if (strcmp(lex_p[0], "date") == 0) {
+					TWI_GetTime(&time);
+					UART_SendString(TWI_PrintDateTime(buf));
+					UART_SendString(PROMPTLINE);
+					COMMAND_DONE;
+				}
+				/* Set current date and time: "setdate DDMMYYYYHHMMSS" */
+				if (strcmp(lex_p[0], "setdate") == 0) {
+
+					COMMAND_DONE;
+				}
+				/* Set color:  "color <red, 0-255>,<green, 0-255>,<blue, 0-255>" */
+				else if (strcmp(lex_p[0], "color") == 0) {
+					red_timer.load = atoi(lex_p[1]);
+					green_timer.load = atoi(lex_p[2]);
+					blue_timer.load = atoi(lex_p[3]);
+					COMMAND_DONE;
+				}
+				/* Set alarm date and time: "alarm DDMMYYYYHHMMSS" */
+				else if (strcmp(lex_p[0], "alarm") == 0) {
+
+					COMMAND_DONE;
+				}
+				/* TODO develop ping-pong functionality */
+				else if (strcmp(lex_p[0], "ping") == 0) {
+					uart_tx_buff = "pong\n\r";
+					DATA_SEND_READY;
+					COMMAND_DONE;
+				}
+				/* TODO develop print usage info */
+				else if (strcmp(lex_p[0], "help") == 0) {
+					/* TODO print usage info */
+					uart_tx_buff = "Help: [under constraction]\n\r";
+					DATA_SEND_READY;
+					COMMAND_DONE;
+				}
+				/* Unrecognized command */
+				else {
+					//uart_tx_buff = "\n\r";
+					//DATA_SEND_READY;
+					COMMAND_DONE;
+				}
+			}
+			if (IS_DATA_TO_SEND) {
+				UART_SendString(uart_tx_buff);
+				DATA_SEND_DONE;
+			}
+			_delay_us(2);
+		}
+
+
+#if 0
 	while (1) {
 		if (new_command) {
 			switch (uart_rx_buf) {
@@ -216,4 +277,5 @@ int main(void)
 		//_delay_ms(1000);
 
 	}
+#endif
 }

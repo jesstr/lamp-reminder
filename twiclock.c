@@ -137,7 +137,7 @@ void TWI_SetTime(time_t *time)
 /* Print current date and time */
 char *TWI_PrintDateTime(char *buf)
 {
-	sprintf(buf, "Current time: %02d.%02d.%02d %02d:%02d:%02d\n",
+	sprintf(buf, "Current time: %02d.%02d.%02d %02d:%02d:%02d\r\n",
 			time.date, time.mon, time.year, time.hour, time.min, time.sec);
 
 	return buf;
