@@ -10,7 +10,7 @@ void TWI_Init()
 	/* Set base year */
 	ee_year = 2000;
 	/* Set bit rate (100kHz on 8Mhz) */
-	TWBR = 0x00;
+	TWBR = 0x01;
 	TWSR |= (1<<TWPS1);					// divider 16
 	TWDR = 0xFF;						// release bus
 	TWCR = (1<<TWEN)|					// TWI on
@@ -126,7 +126,7 @@ void TWI_GetTime(time_t *time)
 void TWI_SetTime(time_t *time)
 {
 	//eeprom_write_word(&ee_year,year);
-	TWI_SetByte(ADR_YEAR, time->year - 2000);	// offset
+	TWI_SetByte(ADR_YEAR, time->year);	// offset
 	TWI_SetByte(ADR_MON, (time->mon / 10) * 16 + time->mon % 10);
 	TWI_SetByte(ADR_DATE, (time->date / 10) * 16 + time->date % 10);
 	TWI_SetByte(ADR_HOUR, (time->hour / 10) * 16 + time->hour % 10);
@@ -135,7 +135,7 @@ void TWI_SetTime(time_t *time)
 }
 
 /* Print current date and time */
-char *TWI_PrintDateTime(char *buf)
+char *TWI_TimeToStr(char *buf)
 {
 	sprintf(buf, "Current time: %02d.%02d.%02d %02d:%02d:%02d\r\n",
 			time.date, time.mon, time.year, time.hour, time.min, time.sec);

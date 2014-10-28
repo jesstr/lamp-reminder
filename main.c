@@ -21,13 +21,14 @@
 #include "twiclock.h"
 #include "parce.h"
 
-
 /* Flag, new UART command received */
 volatile unsigned char new_command;
 /* UART RX buffer */
 volatile unsigned char uart_rx_buf;
 /* Color cursor */
 unsigned char color_to_set;
+/*  */
+char buf[32];
 
 /* Banner image */
 char banner[] PROGMEM = {
@@ -129,6 +130,14 @@ inline void IO_Init(void) {
 
 }
 
+
+/* */
+void inline PrintString(char *str) {
+	uart_tx_buff = str;
+	DATA_SEND_READY;
+}
+
+
 /* Main routine */
 int main(void)
 {
@@ -137,13 +146,9 @@ int main(void)
 
 	red_timer.load = 100;
 	blue_timer.load = 100;
-	//green_timer.load = 100;
+	green_timer.load = 100;
 
 	RGB_TIMERS_START;
-
-	//RED_PORT |= (1 << RED_PIN);
-	//BLUE_PORT |= (1 << BLUE_PIN);
-	//GREEN_PORT |= (1 << GREEN_PIN); //defected pin
 
 	TWI_Init();
 	year = eeprom_read_word(&year);
@@ -153,6 +158,7 @@ int main(void)
 
 	/* Print banner image */
 	UART_PgmSendString(banner);
+	UART_SendString(PROMPTLINE);
 
 	/* Time debug */
 	time.year = 14;
@@ -164,29 +170,67 @@ int main(void)
 
 	TWI_SetTime(&time);
 
-	char buf[32];
-
 	TWI_GetTime(&time);
-	UART_SendString(TWI_PrintDateTime(buf));
+	PrintString(TWI_TimeToStr(buf));
 	/* Time debug end */
 
 	  while(1) {
 			if (IS_NEW_COMMAND) {
 				command = strtok(uart_rx_packet, "=, ");
 				lex_p[n_lex++] = command;
-				while( (command = strtok(NULL, "=, ")) ) {
+				while( (command = strtok(NULL, "=,.: ")) ) {
 					lex_p[n_lex++] = command;
 				}
 				/* Set current date and time: "date" */
 				if (strcmp(lex_p[0], "date") == 0) {
 					TWI_GetTime(&time);
-					UART_SendString(TWI_PrintDateTime(buf));
-					UART_SendString(PROMPTLINE);
+					PrintString(TWI_TimeToStr(buf));
 					COMMAND_DONE;
 				}
-				/* Set current date and time: "setdate DDMMYYYYHHMMSS" */
+				/* Set current date and time: "setdate DDMMYYHHMMSS" */
 				if (strcmp(lex_p[0], "setdate") == 0) {
+					/* Check input data and time format */
+					if (strlen(lex_p[1]) != 12) {
+						PrintString("Wrong time format, use DDMMYYHHMMSS.\n\r \
+For example: 281014105000 for 28th October 2014 10:50:00\n\r");
+					}
+					/* Set date and time */
+					else {
+						char tmpbuf[3];
+						char *ch_p;
 
+						ch_p = lex_p[1];
+						strncpy(tmpbuf, ch_p, 2);
+						tmpbuf[2] = '\0';
+						time.date = atoi(tmpbuf);
+
+						ch_p += 2;
+						strncpy(tmpbuf, ch_p, 2);
+						tmpbuf[2] = '\0';
+						time.mon = atoi(tmpbuf);
+
+						ch_p += 2;
+						strncpy(tmpbuf, ch_p, 2);
+						tmpbuf[2] = '\0';
+						time.year = atoi(tmpbuf);
+
+						ch_p += 2;
+						strncpy(tmpbuf, ch_p, 2);
+						tmpbuf[2] = '\0';
+						time.hour = atoi(tmpbuf);
+
+						ch_p += 2;
+						strncpy(tmpbuf, ch_p, 2);
+						tmpbuf[2] = '\0';
+						time.min = atoi(tmpbuf);
+
+						ch_p += 2;
+						strncpy(tmpbuf, ch_p, 2);
+						tmpbuf[2] = '\0';
+						time.sec = atoi(tmpbuf);
+
+						TWI_SetTime(&time);
+					}
 					COMMAND_DONE;
 				}
 				/* Set color:  "color <red, 0-255>,<green, 0-255>,<blue, 0-255>" */
@@ -210,8 +254,7 @@ int main(void)
 				/* TODO develop print usage info */
 				else if (strcmp(lex_p[0], "help") == 0) {
 					/* TODO print usage info */
-					uart_tx_buff = "Help: [under constraction]\n\r";
-					DATA_SEND_READY;
+					PrintString("Help: [under constraction]\n\r");
 					COMMAND_DONE;
 				}
 				/* Unrecognized command */
@@ -223,59 +266,9 @@ int main(void)
 			}
 			if (IS_DATA_TO_SEND) {
 				UART_SendString(uart_tx_buff);
+				UART_SendString(PROMPTLINE);
 				DATA_SEND_DONE;
 			}
 			_delay_us(2);
 		}
-
-
-#if 0
-	while (1) {
-		if (new_command) {
-			switch (uart_rx_buf) {
-				/* Reset LED color (switch LEDs off) */
-				case 0xC0:
-
-					new_command = 0;
-					break;
-				/* Self test */
-				case 0xCC:
-					UART_SendByte(0xC3);
-					new_command = 0;
-					break;
-				/* Set LED color */
-				//case 0x80 ... 0x9F:
-				case 'C':
-					color_to_set = 1;
-					new_command = 0;
-					break;
-				default:
-					switch (color_to_set) {
-						case 1:
-							red_timer.load = uart_rx_buf;
-							color_to_set++;
-							new_command = 0;
-							break;
-						case 2:
-							green_timer.load = uart_rx_buf;
-							color_to_set++;
-							new_command = 0;
-							break;
-						case 3:
-							blue_timer.load = uart_rx_buf;
-							color_to_set = 0;
-							new_command = 0;
-							break;
-						default:
-							break;
-					}
-					break;
-			}
-		}
-
-		//UART_SendByte(TWI_GetByte(ADR_SEC)); //test
-		//_delay_ms(1000);
-
-	}
-#endif
 }

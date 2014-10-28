@@ -62,7 +62,7 @@ void TWI_GetTime(time_t *time);
 /* Receive byte from slave */
 unsigned char TWI_GetByte(unsigned char Adr);
 /* Print current date and time */
-char *TWI_PrintDateTime(char *buf);
+char *TWI_TimeToStr(char *buf);
 
 #endif /* TWICLOCK_H_ */
 
