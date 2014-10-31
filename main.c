@@ -50,6 +50,18 @@ ________________________					\n\r\
 											\n\r"
 };
 
+/* Help text */
+char help[] PROGMEM = {
+"											\n\r\
+date - 	Print current date and time			\n\r\
+color - Set lamp color in RGB format		\n\r\
+	Usage: color <red, 0-255>,<green, 0-255>,<blue, 0-255>		\n\r\
+setdate - Set current date and time       	\n\r\
+	Usage: setdate DDMMYYHHMMSS				\n\r\
+setalarm - Set alarm date and time			\n\r\
+	Usage: setalarm DDMMYYYYHHMMSS			\n\r\
+help - 	Show help							\n\r"
+};
 
 /* USART RX interrupt routine */
 ISR(USART_RXC_vect)
@@ -130,13 +142,11 @@ inline void IO_Init(void) {
 
 }
 
-
 /* */
 void inline PrintString(char *str) {
 	uart_tx_buff = str;
 	DATA_SEND_READY;
 }
-
 
 /* Main routine */
 int main(void)
@@ -144,9 +154,9 @@ int main(void)
 	RGB_IO_Init();
 	SoftPwm_Timer_Init();
 
-	red_timer.load = 100;
-	blue_timer.load = 100;
-	green_timer.load = 100;
+	red_timer.load = 0;
+	blue_timer.load = 0;
+	green_timer.load = 0;
 
 	RGB_TIMERS_START;
 
@@ -171,20 +181,26 @@ int main(void)
 	TWI_SetTime(&time);
 
 	TWI_GetTime(&time);
-	PrintString(TWI_TimeToStr(buf));
+	PrintString(TWI_TimeToStr(&time, buf));
 	/* Time debug end */
 
 	  while(1) {
 			if (IS_NEW_COMMAND) {
 				command = strtok(uart_rx_packet, "=, ");
 				lex_p[n_lex++] = command;
-				while( (command = strtok(NULL, "=,.: ")) ) {
+				while( (command = strtok(NULL, "=, ")) ) {
 					lex_p[n_lex++] = command;
 				}
-				/* Set current date and time: "date" */
+				/* Get current date and time: "date" */
 				if (strcmp(lex_p[0], "date") == 0) {
 					TWI_GetTime(&time);
-					PrintString(TWI_TimeToStr(buf));
+					PrintString(TWI_TimeToStr(&time, buf));
+					COMMAND_DONE;
+				}
+				/* Get current alarm time: "alarm" */
+				if (strcmp(lex_p[0], "alarm") == 0) {
+					TWI_GetAlarm1(&alarm1);
+					PrintString(TWI_TimeToStr(&alarm1, buf));
 					COMMAND_DONE;
 				}
 				/* Set current date and time: "setdate DDMMYYHHMMSS" */
@@ -230,6 +246,10 @@ For example: 281014105000 for 28th October 2014 10:50:00\n\r");
 						time.sec = atoi(tmpbuf);
 
 						TWI_SetTime(&time);
+
+						TWI_GetTime(&time);
+						PrintString(TWI_TimeToStr(&time, buf));
+
 					}
 					COMMAND_DONE;
 				}
@@ -240,9 +260,46 @@ For example: 281014105000 for 28th October 2014 10:50:00\n\r");
 					blue_timer.load = atoi(lex_p[3]);
 					COMMAND_DONE;
 				}
-				/* Set alarm date and time: "alarm DDMMYYYYHHMMSS" */
-				else if (strcmp(lex_p[0], "alarm") == 0) {
+				/* Set alarm time: "setalarm DDMMYYHHMMSS" */
+				else if (strcmp(lex_p[0], "setalarm") == 0) {
+					/* Check alarm time format */
+					if (strlen(lex_p[1]) != 12) {
+						PrintString("Wrong alarm time format, use DDMMYYHHMMSS.\n\r \
+For example: 281014105000 for 28th October 2014 10:50:00\n\r");
+					}
+					/* Set alarm */
+					else {
+						char tmpbuf[3];
+						char *ch_p;
 
+						ch_p = lex_p[1];
+						strncpy(tmpbuf, ch_p, 2);
+						tmpbuf[2] = '\0';
+						alarm1.date = atoi(tmpbuf);
+
+						/* Skip mon and year field TODO */
+						ch_p += 4;
+
+						ch_p += 2;
+						strncpy(tmpbuf, ch_p, 2);
+						tmpbuf[2] = '\0';
+						alarm1.hour = atoi(tmpbuf);
+
+						ch_p += 2;
+						strncpy(tmpbuf, ch_p, 2);
+						tmpbuf[2] = '\0';
+						alarm1.min = atoi(tmpbuf);
+
+						ch_p += 2;
+						strncpy(tmpbuf, ch_p, 2);
+						tmpbuf[2] = '\0';
+						alarm1.sec = atoi(tmpbuf);
+
+						TWI_SetAlarm1(&alarm1, ONCE_PER_MON);
+
+						PrintString(TWI_TimeToStr(&alarm1, buf));
+
+					}
 					COMMAND_DONE;
 				}
 				/* TODO develop ping-pong functionality */
@@ -254,7 +311,9 @@ For example: 281014105000 for 28th October 2014 10:50:00\n\r");
 				/* TODO develop print usage info */
 				else if (strcmp(lex_p[0], "help") == 0) {
 					/* TODO print usage info */
-					PrintString("Help: [under constraction]\n\r");
+					//PrintString("Help: [under construction]\n\r");
+					UART_PgmSendString(help);
+					UART_SendString(PROMPTLINE);
 					COMMAND_DONE;
 				}
 				/* Unrecognized command */

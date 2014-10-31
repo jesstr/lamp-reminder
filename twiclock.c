@@ -122,11 +122,38 @@ void TWI_GetTime(time_t *time)
 	time->year = (tmp / 16) * 10 + tmp % 16;
 }
 
+/* Get current alarm1 time */
+void TWI_GetAlarm1(time_t *alarm)
+{
+	unsigned char tmp;
+	tmp = TWI_GetByte(ADR_ALARM1_SEC);
+	alarm->sec = (tmp / 16) * 10 + tmp % 16; //bcd2hex
+	tmp = TWI_GetByte(ADR_ALARM1_MIN);
+	alarm->min = (tmp / 16) * 10 + tmp % 16;
+	tmp = TWI_GetByte(ADR_ALARM1_HOUR);
+	alarm->hour = (tmp / 16) * 10 + tmp % 16;
+	tmp = TWI_GetByte(ADR_ALARM1_DATE);
+	alarm->date = (tmp / 16) * 10 + tmp % 16;
+}
+
+/* Get current alarm2 time */
+void TWI_GetAlarm2(time_t *alarm)
+{
+	unsigned char tmp;
+	tmp = TWI_GetByte(ADR_ALARM2_MIN);
+	alarm->min = (tmp / 16) * 10 + tmp % 16;
+	tmp = TWI_GetByte(ADR_ALARM2_HOUR);
+	alarm->hour = (tmp / 16) * 10 + tmp % 16;
+	tmp = TWI_GetByte(ADR_ALARM2_DATE);
+	alarm->date = (tmp / 16) * 10 + tmp % 16;
+}
+
 /* Set current time */
 void TWI_SetTime(time_t *time)
 {
 	//eeprom_write_word(&ee_year,year);
-	TWI_SetByte(ADR_YEAR, time->year);	// offset
+	//TWI_SetByte(ADR_YEAR, time->year);	// offset
+	TWI_SetByte(ADR_MON, (time->year / 10) * 16 + time->year % 10);
 	TWI_SetByte(ADR_MON, (time->mon / 10) * 16 + time->mon % 10);
 	TWI_SetByte(ADR_DATE, (time->date / 10) * 16 + time->date % 10);
 	TWI_SetByte(ADR_HOUR, (time->hour / 10) * 16 + time->hour % 10);
@@ -134,11 +161,40 @@ void TWI_SetTime(time_t *time)
 	TWI_SetByte(ADR_SEC, (time->sec / 10) * 16 + time->sec % 10);
 }
 
-/* Print current date and time */
-char *TWI_TimeToStr(char *buf)
+/* Set Alarm1  */
+void TWI_SetAlarm1(time_t *alarm, unsigned char period_mask)
 {
-	sprintf(buf, "Current time: %02d.%02d.%02d %02d:%02d:%02d\r\n",
-			time.date, time.mon, time.year, time.hour, time.min, time.sec);
+	unsigned char tmp;
+
+	TWI_SetByte(ADR_ALARM1_DATE, ((period_mask & (1 << A1M4)) << 7) |
+			((alarm->date / 10) * 16 + alarm->date % 10));
+	TWI_SetByte(ADR_ALARM1_HOUR, ((period_mask & (1 << A1M3)) << 7) |
+			((alarm->hour / 10) * 16 + alarm->hour % 10));
+	TWI_SetByte(ADR_ALARM1_MIN,  ((period_mask & (1 << A1M2)) << 7) |
+			((alarm->min / 10) * 16 + alarm->min % 10));
+	TWI_SetByte(ADR_ALARM1_SEC,  ((period_mask & (1 << A1M1)) << 7) |
+			((alarm->sec / 10) * 16 + alarm->sec % 10));
+	tmp = TWI_GetByte(CONTROL_REG);
+	TWI_SetByte(CONTROL_REG, tmp | (1 << A1IE));
+}
+
+/* Set Alarm2  */
+void TWI_SetAlarm2(time_t *alarm, unsigned char period_mask)
+{
+	TWI_SetByte(ADR_ALARM2_DATE, ((period_mask & (1 << A1M4)) << 7) |
+			((alarm->date / 10) * 16 + alarm->date % 10));
+	TWI_SetByte(ADR_ALARM2_HOUR, ((period_mask & (1 << A1M4)) << 7) |
+			((alarm->hour / 10) * 16 + alarm->hour % 10));
+	TWI_SetByte(ADR_ALARM2_MIN,  ((period_mask & (1 << A1M4)) << 7) |
+			((alarm->min / 10) * 16 + alarm->min % 10));
+	//TWI_SetByte(CONTROL_REG, (1 << A2IE)|(1 << INTCN));
+}
+
+/* Print current date and time */
+char *TWI_TimeToStr(time_t *time, char *buf)
+{
+	sprintf(buf, "%02d.%02d.%02d %02d:%02d:%02d\r\n",
+			time->date, time->mon, time->year, time->hour, time->min, time->sec);
 
 	return buf;
 }
