@@ -20,6 +20,7 @@
 #include "soft_timer.h"
 #include "twiclock.h"
 #include "parce.h"
+#include "tty.h"
 
 /* Flag, new UART command received */
 volatile unsigned char new_command;
@@ -63,10 +64,113 @@ setalarm - Set alarm date and time			\n\r\
 help - 	Show help							\n\r"
 };
 
+/* */
+void inline PrintString(char *str);
+
 /* USART RX interrupt routine */
 ISR(USART_RXC_vect)
 {
-	UART_FillRxBuf(UDR);
+	unsigned char data = UDR;
+
+	static unsigned escape_key = 0;
+	static unsigned escape_chain = 0;
+
+		if ((n_bytes < UART_RX_BUFF_SIZE - 1) && (data != END_OF_COMMAND)) {
+
+			/* If "Escape" key was pressed */
+			if (data == 0x1B) {
+				escape_key = 1;
+				return;
+			}
+
+			/* If escape chain was pressed */
+			if (escape_key && data == '[') {
+				escape_key = 0;
+				escape_chain = 1;
+				return;
+			}
+
+			/* Escape chains processing */
+			if (escape_chain) {
+				/* "UP" key pressed */
+				if (data == 'A') {
+					/* Restore command from history */
+					char str[32];
+
+					strcpy(str, tty_history_look_up());
+					strcpy(uart_rx_buff, str);
+					n_bytes = strlen(str);
+
+					/* Print command */
+					UART_SendString("\r");
+					UART_SendString(PROMPTLINE);
+					UART_SendString(str);
+					//PrintString(strcat(PROMPTLINE, str));
+
+				}
+				/* "DOWN" key pressed */
+				if (data == 'B') {
+					/* Restore command from history */
+					char str[32];
+
+					strcpy(str, tty_history_look_down());
+					strcpy(uart_rx_buff, str);
+					n_bytes = strlen(str);
+
+					/* Print command */
+					UART_SendString("\r");
+					UART_SendString(PROMPTLINE);
+					UART_SendString(str);
+					//PrintString(strcat(PROMPTLINE, str));
+
+				}
+				escape_chain = 0;
+				return;
+			}
+
+			/* Separate keys processing */
+			else {
+				/* "Backspace" key processed */
+				if (data == '\b') {
+					if (n_bytes > 0) {
+						uart_rx_buff[n_bytes--] = '\0';
+						UART_SendString("\b \b");
+					}
+					return;
+				}
+
+				/* Put char on screen */
+				uart_rx_buff[n_bytes++] = data;
+				UART_SendByte(data);
+			}
+		}
+
+		else {
+			/* Buffer overflowed */
+			if (n_bytes >= UART_RX_BUFF_SIZE) {
+				global_state |= (1<<UART_buffoverflow_bit);
+			}
+			else {
+				/* "Enter" key pressed */
+				if ((global_state & (1 << UART_rx_complete_bit)) == 0) {
+					uart_rx_buff[n_bytes] = '\0';
+					global_state |= (1 << UART_rx_complete_bit);
+					global_state &= ~(1 << UART_wrong_package_bit);
+					strcpy(uart_rx_packet, uart_rx_buff);
+					UART_SendString("\r\n");
+					UART_SendString(PROMPTLINE);
+					/* Save command to history */
+					if (n_bytes > 0) {
+						tty_history_add(uart_rx_buff);
+					}
+				}
+				else {
+					/* Wrong package received */
+					global_state |= (1<<UART_wrong_package_bit);
+				}
+			}
+		n_bytes = 0;
+		}
 }
 
 /* TODO INT0 interrupt routine (INT0 external IRQ) */
@@ -194,13 +298,13 @@ int main(void)
 				/* Get current date and time: "date" */
 				if (strcmp(lex_p[0], "date") == 0) {
 					TWI_GetTime(&time);
-					PrintString(TWI_TimeToStr(&time, buf));
+					PrintString(strcat("Current time: ",TWI_TimeToStr(&time, buf)));
 					COMMAND_DONE;
 				}
 				/* Get current alarm time: "alarm" */
 				if (strcmp(lex_p[0], "alarm") == 0) {
 					TWI_GetAlarm1(&alarm1);
-					PrintString(TWI_TimeToStr(&alarm1, buf));
+					PrintString(strcat("Current alarm: ",TWI_TimeToStr(&alarm1, buf)));
 					COMMAND_DONE;
 				}
 				/* Set current date and time: "setdate DDMMYYHHMMSS" */
