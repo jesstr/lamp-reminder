@@ -153,7 +153,7 @@ void TWI_SetTime(time_t *time)
 {
 	//eeprom_write_word(&ee_year,year);
 	//TWI_SetByte(ADR_YEAR, time->year);	// offset
-	TWI_SetByte(ADR_MON, (time->year / 10) * 16 + time->year % 10);
+	TWI_SetByte(ADR_YEAR, (time->year / 10) * 16 + time->year % 10);
 	TWI_SetByte(ADR_MON, (time->mon / 10) * 16 + time->mon % 10);
 	TWI_SetByte(ADR_DATE, (time->date / 10) * 16 + time->date % 10);
 	TWI_SetByte(ADR_HOUR, (time->hour / 10) * 16 + time->hour % 10);
