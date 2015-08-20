@@ -3,6 +3,7 @@
  *
  *  Created on: 07.11.2014
  *      Author: Pavel Cherstvov
+ *    Compiler: avr-gcc 4.5.3
  */
 
 #ifndef TTY_H_

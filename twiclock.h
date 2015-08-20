@@ -3,6 +3,8 @@
  *
  *  Created on: 16.09.2012
  *      Author: Pavel Cherstvov
+ *    Compiler: avr-gcc 4.5.3
+ *        Note:	DS3232 driver - Extremely Accurate i2c RTC with Integrated Crystal and SRAM
  */
 
 #ifndef TWICLOCK_H_
@@ -32,7 +34,7 @@
 #define ADR_ALARM2_DATE		0x0D
 
 #define CONTROL_REG			0x0E
-#define CONTROLSTATUS_REG	0x0E
+#define CONTROLSTATUS_REG	0x0F
 
 /* Common state registry values */
 #define TWI_START                  0x08  // START sent
@@ -78,6 +80,37 @@
 #define BBSQW	6
 #define EOSC	7
 
+#define A1F		0
+#define A2F		1
+#define BSY		2
+#define EN32kHz	3
+#define OSF		7
+
+
+#define ALARM1_IS_ON	TWI_GetByte(CONTROL_REG) & (1 << A1IE)
+
+//#define ALARM1_ON		TWI_Se TWI_GetByte(CONTROL_REG) |= (1 << A1IE)
+//#define ALARM1_OFF		TWI_GetByte(CONTROL_REG) &= ~(1 << A1IE)
+
+#define ALARM2_IS_ON	TWI_GetByte(CONTROL_REG) & (1 << A2IE)
+
+//#define ALARM2_ON		TWI_GetByte(CONTROL_REG) |= (1 << A2IE)
+//#define ALARM2_OFF		TWI_GetByte(CONTROL_REG) &= ~(1 << A2IE)
+
+#define ALARM1_RESET	do {									\
+						unsigned char tmp;						\
+						tmp = TWI_GetByte(CONTROLSTATUS_REG);	\
+						tmp &= ~(1 << A1F);						\
+						TWI_SetByte(CONTROLSTATUS_REG, tmp);	\
+						} while(0)
+
+#define ALARM2_RESET	do {									\
+						unsigned char tmp;						\
+						tmp = TWI_GetByte(CONTROLSTATUS_REG);	\
+						tmp &= ~(1 << A2F);						\
+						TWI_SetByte(CONTROLSTATUS_REG, tmp);	\
+						} while(0)
+
 //uint16_t ee_year EEMEM = 2000; // Base year in EEPROM
 uint16_t ee_year; // Base year = 2000 (twiclock.c)
 uint16_t year;   // Year value, global variable
@@ -105,6 +138,8 @@ void TWI_SetTime(time_t *time);
 void TWI_GetTime(time_t *time);
 /* Receive byte from slave */
 unsigned char TWI_GetByte(unsigned char Adr);
+/* Sent byte to Slave */
+unsigned char TWI_SetByte(unsigned char Adr, unsigned char data);
 /* Print current date and time */
 char *TWI_TimeToStr(time_t *time, char *buf);
 /* Set Alarm1  */

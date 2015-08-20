@@ -1,3 +1,10 @@
+/*
+ * uart.h
+ *
+ *  Created on: 12.09.2014
+ *      Author: Pavel Cherstvov
+ *    Compiler: avr-gcc 4.5.3
+ */
 
 #ifndef _UART_H_
 #define _UART_H_
@@ -11,7 +18,7 @@
 /* TODO translate comments */
 #define UART_RX_BUFF_SIZE		32	// Ðàçìåð áóôåðà ïðèåìà UART
 #define UART_TX_BUFF_SIZE		32	// Ðàçìåð áóôåðà ïðèåìà UART
-#define UART_LEX_MASS_SIZE		4	// Ðàçìåð ìàññèâà ëåêñåì
+#define UART_LEX_MASS_SIZE		5	// Ðàçìåð ìàññèâà ëåêñåì
 
 #define END_OF_COMMAND		0x0D	//Flag, that indicates the end of command
 
@@ -53,15 +60,17 @@ unsigned char global_state; // Ïåðåìåííàÿ ôëàãîâ ñîñòîÿí�
 
 
 /* UART initialization */
-void UART_Init(unsigned int ubrr1);
+void UART_Init(const unsigned int ubrr1);
 /* Send a byte over UART */
-void UART_SendByte(unsigned char byte1);
+void UART_SendByte(const unsigned char byte1);
 /* Send text string over UART */
-void UART_SendString(char *buffer);
-/* Send data over UART */
-void UART_SendData(char *buffer, unsigned short nbytes);
+void UART_SendString(const const char *buffer);
+/* Send nbytes of data over UART */
+void UART_SendData(const char *buffer, unsigned short nbytes);
 /* Send text string from program memory over UART */
-void UART_PgmSendString(char *str);
+void UART_PgmSendString(const char *str);
+/* Send text string from eeprom over UART */
+void UART_EememSendString(const char *str);
 
 
 #endif /* _UART_H_ */

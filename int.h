@@ -3,6 +3,7 @@
  *
  *  Created on: 14.04.2014
  *      Author: Pavel Cherstvov
+ *    Compiler: avr-gcc 4.5.3
  */
 
 #ifndef INT_H_

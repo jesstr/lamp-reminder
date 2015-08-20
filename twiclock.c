@@ -1,5 +1,11 @@
-
-// DS3232 - Extremely Accurate i2c RTC with Integrated Crystal and SRAM
+/*
+ * twiclock.c
+ *
+ *  Created on: 16.09.2012
+ *      Author: Pavel Cherstvov
+ *    Compiler: avr-gcc 4.5.3
+ *        Note:	DS3232 driver- Extremely Accurate i2c RTC with Integrated Crystal and SRAM
+ */
 
 #include <avr/eeprom.h>
 #include "twiclock.h"
@@ -11,7 +17,7 @@ void TWI_Init()
 	ee_year = 2000;
 	/* Set bit rate (100kHz on 8Mhz) */
 	TWBR = 0x01;
-	TWSR |= (1<<TWPS1);					// divider 16
+	TWSR |= (1<<TWPS0);		// divider 16
 	TWDR = 0xFF;						// release bus
 	TWCR = (1<<TWEN)|					// TWI on
 			(0<<TWIE)|(0<<TWINT)|
@@ -60,7 +66,7 @@ unsigned char TWI_GetByte(unsigned char Adr)
 	TWCR = (1<<TWINT) | (1<<TWEN) | (0<<TWEA); //ACK off 
 	while (!(TWCR & (1<<TWINT)))
 	;
-	data=TWDR;
+	data = TWDR;
 	if ((TWSR & 0xF8) != TWI_MRX_DATA_NACK) //Status: DATA_NACK
 	{TWCR = (1<<TWINT)|(1<<TWEN)|(1<<TWSTO); return 0xff; }
 
@@ -92,7 +98,7 @@ unsigned char TWI_SetByte(unsigned char Adr, unsigned char data)
 	if ((TWSR & 0xF8) != TWI_MTX_DATA_ACK) //Status: DATA_ACK
 	{TWCR = (1<<TWINT)|(1<<TWEN)|(1<<TWSTO); return 0xff; }
 
-	TWDR=data;
+	TWDR = data;
 	TWCR = (1<<TWINT) | (1<<TWEN) | (0<<TWEA); //ACK off 
 	while (!(TWCR & (1<<TWINT)))
 	;
@@ -175,7 +181,13 @@ void TWI_SetAlarm1(time_t *alarm, unsigned char period_mask)
 	TWI_SetByte(ADR_ALARM1_SEC,  ((period_mask & (1 << A1M1)) << 7) |
 			((alarm->sec / 10) * 16 + alarm->sec % 10));
 	tmp = TWI_GetByte(CONTROL_REG);
-	TWI_SetByte(CONTROL_REG, tmp | (1 << A1IE));
+	tmp |= ((1 << A1IE)|(1 << INTCN));
+	TWI_SetByte(CONTROL_REG, tmp);
+
+//	tmp = TWI_GetByte(CONTROLSTATUS_REG);
+//	tmp &= ~((1 << A1F)|(1 << A2F));
+//	TWI_SetByte(CONTROLSTATUS_REG, tmp);
+	ALARM1_RESET;
 }
 
 /* Set Alarm2  */
@@ -193,7 +205,7 @@ void TWI_SetAlarm2(time_t *alarm, unsigned char period_mask)
 /* Print current date and time */
 char *TWI_TimeToStr(time_t *time, char *buf)
 {
-	sprintf(buf, "%02d.%02d.%02d %02d:%02d:%02d\r\n",
+	sprintf(buf, "%02d.%02d.%02d %02d:%02d:%02d",
 			time->date, time->mon, time->year, time->hour, time->min, time->sec);
 
 	return buf;

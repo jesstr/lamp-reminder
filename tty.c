@@ -3,9 +3,11 @@
  *
  *  Created on: 07.11.2014
  *      Author: Pavel Cherstvov
+ *    Compiler: avr-gcc 4.5.3
  */
 
 #include "tty.h"
+#include "uart.h"
 #include <string.h>
 
 unsigned char i = 0;
@@ -54,3 +56,5 @@ void tty_history_add(char *str) {
 
 	strcpy(tty_history[history_pos], str);
 }
+
+

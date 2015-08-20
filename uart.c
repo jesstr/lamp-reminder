@@ -1,11 +1,20 @@
+/*
+ * uart.c
+ *
+ *  Created on: 12.09.2014
+ *      Author: Pavel Cherstvov
+ *    Compiler: avr-gcc 4.5.3
+ */
+
 #include <avr/pgmspace.h>
+#include <avr/eeprom.h>
 #include <avr/io.h>
 #include <stdlib.h>
 #include "uart.h"
 
 
 /* UART initialization */
-void UART_Init(unsigned int ubrr1)
+void UART_Init(const unsigned int ubrr1)
 {
 	/* UBRRH = (unsigned char)(ubrr1>>8); */	/* Setting operation frequency hight byte */
 	UBRRL = (unsigned char) ubrr1;				/* Setting operation frequency low byte */
@@ -25,14 +34,14 @@ void UART_Init(unsigned int ubrr1)
 }
 
 /* Send a byte over UART */
-void UART_SendByte(unsigned char byte1)
+void UART_SendByte(const unsigned char byte1)
 {
 	while (!( UCSRA & (1<<UDRE)));
 	UDR = byte1;
 };
 
 /* Send text string over UART */
-void UART_SendString(char *buffer)
+void UART_SendString(const char *buffer)
 {
 	while (*buffer!=0) {
 		 UART_SendByte(*buffer++);
@@ -41,7 +50,7 @@ void UART_SendString(char *buffer)
 }
 
 /* Send data over UART */
-void UART_SendData(char *buffer, unsigned short nbytes)
+void UART_SendData(const char *buffer, unsigned short nbytes)
 {
 	while (nbytes > 0) {
 		UART_SendByte(*buffer++);
@@ -50,7 +59,7 @@ void UART_SendData(char *buffer, unsigned short nbytes)
 }
 
 /* Send text string from program memory over UART */
-void UART_PgmSendString(char *str){
+void UART_PgmSendString(const char *str){
 	int i = 0;
 	char buf;
 
@@ -58,6 +67,16 @@ void UART_PgmSendString(char *str){
 			i++;
 			UART_SendByte(buf);
 		}
+}
+
+void UART_EememSendString(const char *str) {
+	int i = 0;
+	char buf;
+
+	while( (buf = eeprom_read_byte((unsigned char *)str++)) ) {
+		i++;
+		UART_SendByte(buf);
+	}
 }
 
 /* RX Interrupt routine (has to be moved to the main file) */
